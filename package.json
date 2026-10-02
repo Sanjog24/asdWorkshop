@@ -4,12 +4,14 @@
   "description": "ASD Workshop product catalog API with caching",
   "main": "server.js",
   "scripts": {
+    "test": "node --test test/*.test.js",
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
   "keywords": [],
   "author": "Sanjog Singh",
   "license": "ISC",
+  "type": "commonjs",
   "dependencies": {
     "express": "^5.2.1"
   },
