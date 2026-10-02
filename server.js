@@ -8,53 +8,39 @@ const DB_FILE = path.join(__dirname, 'db.json');
 
 app.use(express.json());
 
-// Helper to load product records from db.json
+// Read product records from db.json
 function loadProducts() {
   const fileData = fs.readFileSync(DB_FILE, 'utf-8');
   return JSON.parse(fileData);
 }
 
-// Helper to save product records to db.json
-function saveProducts(products) {
-  fs.writeFileSync(DB_FILE, JSON.stringify(products, null, 2), 'utf-8');
-}
-
-// GET /products - List all products
+// GET all products
+// http://localhost:3000/products
 app.get('/products', (req, res) => {
   const products = loadProducts();
   res.json(products);
 });
 
-// GET /products/:id - Retrieve product by ID
+// GET product by ID
+// http://localhost:3000/products/1
+// http://localhost:3000/products/2
+// http://localhost:3000/products/3
 app.get('/products/:id', (req, res) => {
   const products = loadProducts();
   const targetId = Number(req.params.id);
-  const foundProduct = products.find((item) => item.id === targetId);
 
-  if (!foundProduct) {
-    return res.status(404).json({ message: 'Product not found' });
+  const product = products.find((p) => p.id === targetId);
+
+  if (!product) {
+    return res.status(404).json({
+      message: 'Product not found'
+    });
   }
 
-  res.json(foundProduct);
+  res.json(product);
 });
 
-// POST /products - Create a new product
-app.post('/products', (req, res) => {
-  const products = loadProducts();
-  const { name, price } = req.body;
-
-  const newProduct = {
-    id: products.length + 1,
-    name,
-    price: Number(price)
-  };
-
-  products.push(newProduct);
-  saveProducts(products);
-
-  res.status(201).json(newProduct);
-});
-
+// Start the server
 app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+  console.log(`Server running at http://localhost:${PORT}`);
 });
