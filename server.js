@@ -6,7 +6,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DB_FILE = path.join(__dirname, 'db.json');
 
-// Async helper to read products from db.json
+// In-memory cache for API responses
+const cache = {};
+
 async function readProductsFromFile() {
   try {
     const data = await fs.readFile(DB_FILE, 'utf-8');
@@ -17,23 +19,32 @@ async function readProductsFromFile() {
   }
 }
 
-// Simulates database delay (1.5 seconds)
 async function fetchProductsWithDelay() {
   await new Promise((resolve) => setTimeout(resolve, 1500));
   return await readProductsFromFile();
 }
 
-// GET all products asynchronously
+// GET all products with in-memory caching
 app.get('/products', async (req, res) => {
   try {
+    const cacheKey = req.originalUrl || req.url;
+
+    // Check if response is in cache
+    if (cache[cacheKey]) {
+      return res.json(cache[cacheKey]);
+    }
+
+    // Cache miss: fetch data and store in cache
     const products = await fetchProductsWithDelay();
+    cache[cacheKey] = products;
+
     res.json(products);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch products' });
   }
 });
 
-// GET product by ID asynchronously
+// GET product by ID
 app.get('/products/:id', async (req, res) => {
   try {
     const products = await fetchProductsWithDelay();
