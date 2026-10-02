@@ -1,43 +1,54 @@
 const express = require('express');
-const fs = require('fs');
 const path = require('path');
+const fs = require('fs/promises');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DB_FILE = path.join(__dirname, 'db.json');
 
-app.use(express.json());
-
-// Read product records from db.json
-function loadProducts() {
-  const fileData = fs.readFileSync(DB_FILE, 'utf-8');
-  return JSON.parse(fileData);
+// Async helper to read products from db.json
+async function readProductsFromFile() {
+  try {
+    const data = await fs.readFile(DB_FILE, 'utf-8');
+    return JSON.parse(data);
+  } catch (err) {
+    console.error('Error reading db.json:', err);
+    throw err;
+  }
 }
 
-// GET all products
-// http://localhost:3000/products
-app.get('/products', (req, res) => {
-  const products = loadProducts();
-  res.json(products);
+// Simulates database delay (1.5 seconds)
+async function fetchProductsWithDelay() {
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+  return await readProductsFromFile();
+}
+
+// GET all products asynchronously
+app.get('/products', async (req, res) => {
+  try {
+    const products = await fetchProductsWithDelay();
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch products' });
+  }
 });
 
-// GET product by ID
-// http://localhost:3000/products/1
-// http://localhost:3000/products/2
-// http://localhost:3000/products/3
-app.get('/products/:id', (req, res) => {
-  const products = loadProducts();
-  const targetId = Number(req.params.id);
+// GET product by ID asynchronously
+app.get('/products/:id', async (req, res) => {
+  try {
+    const products = await fetchProductsWithDelay();
+    const id = Number(req.params.id);
 
-  const product = products.find((p) => p.id === targetId);
+    const product = products.find((item) => item.id === id);
 
-  if (!product) {
-    return res.status(404).json({
-      message: 'Product not found'
-    });
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    res.json(product);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch product' });
   }
-
-  res.json(product);
 });
 
 // Start the server
